@@ -32,10 +32,10 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
 
             var body = _messageBuilder.SerializeAndEncodeMessage(message);
 
-            using var producer = new ProducerBuilder<string, string>(_producerConfig).Build();
-
             try
             {
+                using var producer = new ProducerBuilder<string, string>(_producerConfig).Build();
+
                 await PublishToTopic(producer, body, topicName);
             }
             catch (Exception ex)
@@ -57,11 +57,11 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
         {
             try
             {
-                var cts = new CancellationTokenSource(_kafkaConfig.TimeoutMs);
+                var cancellationToken = new CancellationTokenSource(_kafkaConfig.TimeoutMs);
 
-                var dr = await producer.ProduceAsync(topic, body, cts.Token);
+                var deliveryResult = await producer.ProduceAsync(topic, body, cancellationToken.Token);
 
-                _logger.LogInformation($"Delivered '{body.Value}|{string.Join(",", body.Headers.Select(t => t.Key))}' to '{dr.TopicPartitionOffset}'");
+                _logger.LogInformation($"Delivered '{body.Value}|{string.Join(",", body.Headers.Select(t => t.Key))}' to '{deliveryResult.TopicPartitionOffset}'");
             }
             catch (ProduceException<string, string> ex)
             {
@@ -73,7 +73,11 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
         private ProducerConfig CreateProducerConfig()
            => new ProducerConfig
            {
-               BootstrapServers = _kafkaConfig.Brokers
+               BootstrapServers = _kafkaConfig.Brokers,
+               SaslMechanism = SaslMechanism.Plain,
+               EnableIdempotence = true,
+               Acks = Acks.All,
+               MessageSendMaxRetries = 3,
            };
     }
 }

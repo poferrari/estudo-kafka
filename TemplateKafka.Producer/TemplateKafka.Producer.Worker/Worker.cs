@@ -22,16 +22,24 @@ namespace TemplateKafka.Producer.Worker
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            using var scope = _serviceScopeFactory.CreateScope();
+
+            var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
+
             while (!stoppingToken.IsCancellationRequested)
             {
-                using var scope = _serviceScopeFactory.CreateScope();
+                try
+                {
+                    await productService.InsertProducts();
 
-                var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
+                    _logger.LogInformation("Producer Worker running at: {time}", DateTimeOffset.Now);
+                    await Task.Delay(1000, stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error: {ex.Message}");
 
-                await productService.InsertProducts();
-
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                await Task.Delay(1000, stoppingToken);
+                }
             }
         }
     }

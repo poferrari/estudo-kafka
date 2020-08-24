@@ -4,4 +4,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TemplateKafka.Consumer.Infra.MessagingBroker\TemplateKafka.Consumer.Infra.MessagingBroker.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,5 @@
 ﻿using Bogus;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,16 +17,19 @@ namespace TemplateKafka.Producer.Domain.Products.Services
     public class ProductService : IProductService
     {
         private const string Locale = "pt_BR";
+        private readonly ILogger<ProductService> _logger;
         private readonly IProductRepository _productRepository;
         private readonly IProductStatusRepository _productStatusRepository;
         private readonly ILoadDataService _loadDataService;
         private readonly IMessageDispatcher _messageDispatcher;
 
-        public ProductService(IProductRepository productRepository,
+        public ProductService(ILogger<ProductService> logger,
+                              IProductRepository productRepository,
                               IProductStatusRepository productStatusRepository,
                               ILoadDataService loadDataService,
                               IMessageDispatcher messageDispatcher)
         {
+            _logger = logger;
             _productRepository = productRepository;
             _productStatusRepository = productStatusRepository;
             _loadDataService = loadDataService;
@@ -42,10 +46,12 @@ namespace TemplateKafka.Producer.Domain.Products.Services
 
             var product = GenerateProduct(statusCreated, categories, vendors);
             product.Tags = GenerateTags(product);
+            _logger.LogInformation($"Create product: {product.Name}");
 
             if (!await _productRepository.ExistsProduct(product))
             {
                 var insertedProduct = await _productRepository.InsertProduct(product);
+                _logger.LogInformation($"Save product '{product.Name}' in relational database.");
 
                 if (insertedProduct)
                 {
@@ -56,6 +62,7 @@ namespace TemplateKafka.Producer.Domain.Products.Services
                         CorrelationId = Guid.NewGuid(),
                         Data = productMessage
                     });
+                    _logger.LogInformation($"Publish product '{product.Name}' in topic.");
 
                     Thread.Sleep(2000);
                 }

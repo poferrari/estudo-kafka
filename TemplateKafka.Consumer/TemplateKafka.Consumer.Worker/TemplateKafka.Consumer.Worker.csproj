@@ -10,4 +10,9 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.4" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TemplateKafka.Consumer.Domain\TemplateKafka.Consumer.Domain.csproj" />
+    <ProjectReference Include="..\TemplateKafka.Consumer.Infra.IoC\TemplateKafka.Consumer.Infra.IoC.csproj" />
+  </ItemGroup>
 </Project>

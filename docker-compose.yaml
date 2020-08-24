@@ -1,4 +1,5 @@
 version: '3.5'
+
 services:
   mssql:
     image: mcr.microsoft.com/mssql/server
@@ -43,7 +44,37 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       LISTENERS: PLAINTEXT://kafka:29092
+  
+  mongo:
+    image: mongo
+    hostname: mongo
+    container_name: mongoDB    
+    networks: 
+      - net
+    ports:
+      - 27017:27017   
+    environment:            
+      MONGODB_USERNAME: root
+      MONGODB_PASSWORD: MongoDB2020!
+      MONGODB_DATABASE: product_stack_query      
     
+  mongo-express:
+    image: mongo-express
+    hostname: mongoExpress
+    container_name: mongoExpress    
+    depends_on:
+      - mongo
+    networks: 
+      - net
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_BASICAUTH_USERNAME: mongoUser
+      ME_CONFIG_BASICAUTH_PASSWORD: 1q2w3!e4r5t
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: MongoDB2020!
+         
 networks: 
   net:
     driver: bridge

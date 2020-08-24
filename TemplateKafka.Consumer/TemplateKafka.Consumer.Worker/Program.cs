@@ -1,13 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.IO;
+using TemplateKafka.Consumer.Infra.IoC;
 
 namespace TemplateKafka.Consumer.Worker
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -16,9 +15,24 @@ namespace TemplateKafka.Consumer.Worker
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
-                {
-                    services.AddHostedService<Worker>();
-                });
+                 .ConfigureAppConfiguration((hostingContext, config) =>
+                 {
+                     var env = ReturnEnvironment(config);
+                     config
+                         .SetBasePath(Directory.GetCurrentDirectory())
+                         .AddJsonFile($"appsettings.{(string.IsNullOrEmpty(env) ? "Development" : env)}.json", optional: true, reloadOnChange: true)
+                         .AddEnvironmentVariables();
+                 })
+                 .ConfigureServices((hostContext, services) =>
+                 {
+                     services.ConfigureContainer(hostContext.Configuration);
+                     services.AddHostedService<Worker>();
+                 });
+
+        private static string ReturnEnvironment(IConfigurationBuilder configBuilder)
+          => configBuilder.SetBasePath(Directory.GetCurrentDirectory())
+              .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+              .Build()
+              .GetSection("Environment")?.Value;
     }
 }
