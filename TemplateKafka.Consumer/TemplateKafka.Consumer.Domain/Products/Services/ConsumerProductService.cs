@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Threading;
+using System.Threading.Tasks;
 using TemplateKafka.Consumer.Domain.Products.Dtos;
+using TemplateKafka.Consumer.Domain.Products.Repositories;
 using TemplateKafka.Consumer.Infra.MessagingBroker.Interfaces;
 
 namespace TemplateKafka.Consumer.Domain.Products.Services
@@ -9,22 +11,43 @@ namespace TemplateKafka.Consumer.Domain.Products.Services
     {
         private readonly ILogger<ConsumerProductService> _logger;
         private readonly ITopicConsumer _topicConsumer;
+        private readonly IProductRepository _productRepository;
 
-        public ConsumerProductService(ILogger<ConsumerProductService> logger, ITopicConsumer topicConsumer)
+        public ConsumerProductService(ILogger<ConsumerProductService> logger,
+                                      ITopicConsumer topicConsumer,
+                                      IProductRepository productRepository)
         {
             _logger = logger;
             _topicConsumer = topicConsumer;
+            _productRepository = productRepository;
         }
 
         public void Subscribe(CancellationTokenSource cancellationTokenSource)
         {
-            _topicConsumer.Consumer<ProductDto>("Post.Product", (message) => HandleMessage(message), cancellationTokenSource);
+            _topicConsumer.Consumer<ProductDto>("Post.Product", async (message) => await HandleMessage(message), cancellationTokenSource);
         }
 
-        private void HandleMessage(ProductDto message)
+        private async Task HandleMessage(ProductDto product)
         {
+            _logger.LogInformation($"Raw message received. Product: {product.Name}.");
 
-            _logger.LogInformation($"Get message: {message}");
+            await InsertOrUpdateProduct(product);
+
+            _logger.LogInformation($"Insert product: {product.Name} in Mongo DB");
+        }
+
+        private async Task InsertOrUpdateProduct(ProductDto product)
+        {
+            var productDb = await _productRepository.GetProduct(product);
+
+            if (productDb is null)
+            {
+                await _productRepository.InsertProduct(product);
+            }
+            else
+            {
+                await _productRepository.UpdateProduct(product);
+            }
         }
     }
 }

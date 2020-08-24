@@ -8,10 +8,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.7" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="3.1.7" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.7" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.7" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\TemplateKafka.Consumer.Domain\TemplateKafka.Consumer.Domain.csproj" />
+    <ProjectReference Include="..\TemplateKafka.Consumer.Infra.Data\TemplateKafka.Consumer.Infra.Data.csproj" />
     <ProjectReference Include="..\TemplateKafka.Consumer.Infra.MessagingBroker\TemplateKafka.Consumer.Infra.MessagingBroker.csproj" />
   </ItemGroup>
 
