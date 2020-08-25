@@ -1,5 +1,6 @@
 ﻿using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
 using System.Threading;
@@ -18,11 +19,11 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
 
         public TopicBroker(ILogger<TopicBroker> logger,
                            IMessageBuilder messageBuilder,
-                           KafkaConfig kafkaConfig)
+                           IOptions<KafkaConfig> kafkaConfig)
         {
             _logger = logger;
             _messageBuilder = messageBuilder;
-            _kafkaConfig = kafkaConfig;
+            _kafkaConfig = kafkaConfig.Value;
             _producerConfig = CreateProducerConfig();
         }
 

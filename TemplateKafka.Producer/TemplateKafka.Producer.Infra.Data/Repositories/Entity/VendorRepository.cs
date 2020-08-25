@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TemplateKafka.Producer.Domain.Products.Entities;
@@ -13,7 +14,10 @@ namespace TemplateKafka.Producer.Infra.Data.Repositories.Entity
            : base(context) { }
 
         public async Task<IEnumerable<Vendor>> GetVendors()
-            => await _dbSet.ToListAsync();
+            => await _dbSet.AsNoTracking().ToListAsync();
+
+        public async Task<Vendor> GetVendor(Guid id)
+            => await _dbSet.FindAsync(id);
 
         public async Task<bool> InsertVendors(IEnumerable<Vendor> vendors)
         {

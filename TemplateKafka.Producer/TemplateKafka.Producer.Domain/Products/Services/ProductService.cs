@@ -19,32 +19,37 @@ namespace TemplateKafka.Producer.Domain.Products.Services
         private const string Locale = "pt_BR";
         private readonly ILogger<ProductService> _logger;
         private readonly IProductRepository _productRepository;
-        private readonly IProductStatusRepository _productStatusRepository;
         private readonly ILoadDataService _loadDataService;
         private readonly IMessageDispatcher _messageDispatcher;
+        private IEnumerable<Category> _categories;
+        private IEnumerable<Vendor> _vendors;
+        private IEnumerable<ProductStatus> _productStatus;
 
         public ProductService(ILogger<ProductService> logger,
                               IProductRepository productRepository,
-                              IProductStatusRepository productStatusRepository,
                               ILoadDataService loadDataService,
                               IMessageDispatcher messageDispatcher)
         {
             _logger = logger;
             _productRepository = productRepository;
-            _productStatusRepository = productStatusRepository;
             _loadDataService = loadDataService;
             _messageDispatcher = messageDispatcher;
+
+            LoadCategoriesAndVendorsAndStatus().Wait();
+        }
+
+        private async Task LoadCategoriesAndVendorsAndStatus()
+        {
+            _categories = await _loadDataService.GetCategoriesOrGenerate();
+
+            _vendors = await _loadDataService.GetVendorsOrGenerate();
+
+            _productStatus = await _loadDataService.GetStatus();
         }
 
         public async Task InsertProducts()
         {
-            var statusCreated = await _productStatusRepository.GetStatus(EProductStatus.Created);
-
-            var categories = await _loadDataService.GetCategoriesOrGenerate();
-
-            var vendors = await _loadDataService.GetVendorsOrGenerate();
-
-            var product = GenerateProduct(statusCreated, categories, vendors);
+            var product = GenerateProduct(EProductStatus.Created, _categories, _vendors);
             product.Tags = GenerateTags(product);
             _logger.LogInformation($"Create product: {product.Name}");
 
@@ -55,30 +60,76 @@ namespace TemplateKafka.Producer.Domain.Products.Services
 
                 if (insertedProduct)
                 {
-                    var productMessage = new ProductDto(product);
+                    product.Category = _categories.First(t => t.Id == product.CategoryId);
+                    product.Vendor = _vendors.First(t => t.Id == product.VendorId);
+                    product.Status = _productStatus.First(t => t.Id == (int)EProductStatus.Created);
 
-                    _messageDispatcher.PublishToTopic("Post.Product", new Message<ProductDto>
-                    {
-                        CorrelationId = Guid.NewGuid(),
-                        Data = productMessage
-                    });
-                    _logger.LogInformation($"Publish product '{product.Name}' in topic.");
-
-                    Thread.Sleep(2000);
+                    PublishToTopic(product);
                 }
             }
         }
 
-        private Product GenerateProduct(ProductStatus status, IEnumerable<Category> categories, IEnumerable<Vendor> vendors)
+        public async Task UpdateProducts()
+        {
+            var productId = await _productRepository.GetRandomProductId();
+            if (productId is null)
+            {
+                return;
+            }
+
+            var product = await _productRepository.GetProduct(productId.Value);
+            if (product is null)
+            {
+                return;
+            }
+
+            var productChange = GenerateProduct(EProductStatus.Created, _categories, _vendors);
+            product.Name = productChange.Name;
+            product.Image = productChange.Image;
+            product.Price = productChange.Price;
+            product.Stock = productChange.Stock;
+            product.CategoryId = productChange.CategoryId;
+            product.Category = null;
+            product.VendorId = productChange.VendorId;
+            product.Vendor = null;
+
+            var updatedProduct = await _productRepository.UpdateProduct(product);
+            _logger.LogInformation($"Update product '{product.Name}' in relational database.");
+
+            if (updatedProduct)
+            {
+                product.Category = _categories.First(t => t.Id == product.CategoryId);
+                product.Vendor = _vendors.First(t => t.Id == product.VendorId);
+
+                PublishToTopic(product);
+            }
+        }
+
+        private void PublishToTopic(Product product)
+        {
+            var productMessage = new ProductDto(product);
+
+            _messageDispatcher.PublishToTopic("Post.Product", new Message<ProductDto>
+            {
+                CorrelationId = Guid.NewGuid(),
+                Data = productMessage
+            });
+
+            _logger.LogInformation($"Publish product '{product.Name}' in topic.");
+
+            Thread.Sleep(5000);
+        }
+
+        private Product GenerateProduct(EProductStatus status, IEnumerable<Category> categories, IEnumerable<Vendor> vendors)
             => new Faker<Product>(Locale)
                     .RuleFor(c => c.Id, f => f.Random.Guid())
                     .RuleFor(c => c.Name, f => f.Commerce.ProductName())
-                    .RuleFor(c => c.Image, f => f.Image.PlaceImgUrl())
+                    .RuleFor(c => c.Image, f => $"{f.Image.PlaceImgUrl()}?color={f.Commerce.Color()}")
                     .RuleFor(c => c.Price, f => f.Commerce.Random.Decimal(0.0m, 999.0m))
                     .RuleFor(c => c.Stock, f => f.Commerce.Random.Int(0, 99))
-                    .RuleFor(c => c.Category, f => f.PickRandom(categories))
-                    .RuleFor(c => c.Vendor, f => f.PickRandom(vendors))
-                    .RuleFor(c => c.Status, f => status)
+                    .RuleFor(c => c.CategoryId, f => f.PickRandom(categories).Id)
+                    .RuleFor(c => c.VendorId, f => f.PickRandom(vendors).Id)
+                    .RuleFor(c => c.StatusId, f => (int)status)
                     .Generate();
 
         private ICollection<ProductTag> GenerateTags(Product product)

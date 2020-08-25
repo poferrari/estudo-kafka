@@ -11,8 +11,7 @@ namespace TemplateKafka.Producer.Infra.IoC.Modules
     {
         public static void Register(IServiceCollection services, IConfiguration configuration)
         {
-            var kafkaConfig = configuration.GetSection("KafkaConfig").Get<KafkaConfig>();
-            services.AddSingleton(kafkaConfig);
+            services.Configure<KafkaConfig>(options => configuration.GetSection("KafkaConfig").Bind(options));
 
             services.AddSingleton<ITopicBroker, TopicBroker>();
             services.AddSingleton<IMessageBuilder, MessageBuilder>();

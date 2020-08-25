@@ -38,7 +38,7 @@ namespace TemplateKafka.Consumer.Domain.Products.Services
 
         private async Task InsertOrUpdateProduct(ProductDto product)
         {
-            var productDb = await _productRepository.GetProduct(product);
+            var productDb = await _productRepository.GetProduct(product.Id);
 
             if (productDb is null)
             {

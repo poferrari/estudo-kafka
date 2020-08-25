@@ -18,6 +18,14 @@ namespace TemplateKafka.Producer.Infra.Data.Context
                 relationship.DeleteBehavior = DeleteBehavior.ClientSetNull;
             }
 
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(decimal) || p.ClrType == typeof(decimal?)))
+            {
+
+                property.SetColumnType("decimal(18, 2)");
+            }
+
             base.OnModelCreating(modelBuilder);
         }
     }

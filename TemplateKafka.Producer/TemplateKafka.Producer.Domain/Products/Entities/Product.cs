@@ -12,8 +12,11 @@ namespace TemplateKafka.Producer.Domain.Products.Entities
         public decimal Price { get; set; }
         public int Stock { get; set; }
         public ICollection<ProductTag> Tags { get; set; }
+        public Guid CategoryId { get; set; }
         public Category Category { get; set; }
+        public Guid VendorId { get; set; }
         public Vendor Vendor { get; set; }
+        public int StatusId { get; set; }
         public ProductStatus Status { get; set; }
     }
 }

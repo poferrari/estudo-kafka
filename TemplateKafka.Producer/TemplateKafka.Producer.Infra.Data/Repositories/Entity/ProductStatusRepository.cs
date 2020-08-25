@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using TemplateKafka.Producer.Domain.Products;
 using TemplateKafka.Producer.Domain.Products.Enums;
@@ -11,6 +12,9 @@ namespace TemplateKafka.Producer.Infra.Data.Repositories.Entity
     {
         public ProductStatusRepository(DataContext context)
            : base(context) { }
+
+        public async Task<IEnumerable<ProductStatus>> GetAllStatus()
+            => await _dbSet.AsNoTracking().ToListAsync();
 
         public async Task<ProductStatus> GetStatus(EProductStatus productStatus)
             => await _dbSet.FirstOrDefaultAsync(t => t.Id == (int)productStatus);

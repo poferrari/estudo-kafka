@@ -5,5 +5,7 @@ namespace TemplateKafka.Producer.Domain.Products.Services
     public interface IProductService
     {
         Task InsertProducts();
+
+        Task UpdateProducts();
     }
 }

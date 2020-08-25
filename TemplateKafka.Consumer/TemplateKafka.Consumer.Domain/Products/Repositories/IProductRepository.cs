@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using TemplateKafka.Consumer.Domain.Products.Dtos;
 
 namespace TemplateKafka.Consumer.Domain.Products.Repositories
@@ -9,6 +10,6 @@ namespace TemplateKafka.Consumer.Domain.Products.Repositories
 
         Task UpdateProduct(ProductDto product);
 
-        Task<ProductDto> GetProduct(ProductDto product);
+        Task<ProductDto> GetProduct(Guid id);
     }
 }

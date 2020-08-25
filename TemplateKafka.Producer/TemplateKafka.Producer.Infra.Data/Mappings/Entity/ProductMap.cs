@@ -24,7 +24,16 @@ namespace TemplateKafka.Producer.Infra.Data.Mappings.Entity
                    .IsRequired();
 
             builder.HasMany(c => c.Tags)
-                   .WithOne(c => c.Product);
+                   .WithOne(c => c.Product)
+                   .HasForeignKey(c => c.ProductId);
+
+            builder.HasOne(c => c.Category)
+                   .WithMany()
+                   .HasForeignKey(c => c.CategoryId);
+
+            builder.HasOne(c => c.Vendor)
+                   .WithMany()
+                   .HasForeignKey(c => c.VendorId);
         }
     }
 }

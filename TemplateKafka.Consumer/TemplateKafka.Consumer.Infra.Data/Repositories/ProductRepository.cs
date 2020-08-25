@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using TemplateKafka.Consumer.Domain.Mongo.Interfaces;
 using TemplateKafka.Consumer.Domain.Products.Dtos;
 using TemplateKafka.Consumer.Domain.Products.Repositories;
@@ -24,9 +25,7 @@ namespace TemplateKafka.Consumer.Infra.Data.Repositories
             await _mongoRepository.ReplaceOneAsync(product);
         }
 
-        public async Task<ProductDto> GetProduct(ProductDto product)
-            => await _mongoRepository.FindOneAsync(t => t.Name.Equals(product.Name) &&
-                                                        t.Category.Equals(product.Category) &&
-                                                        t.Vendor.Equals(product.Vendor));
+        public async Task<ProductDto> GetProduct(Guid id)
+            => await _mongoRepository.FindByIdAsync(id);
     }
 }

@@ -9,5 +9,7 @@ namespace TemplateKafka.Producer.Domain.Products.Services
         Task<IEnumerable<Category>> GetCategoriesOrGenerate();
 
         Task<IEnumerable<Vendor>> GetVendorsOrGenerate();
+
+        Task<IEnumerable<ProductStatus>> GetStatus();
     }
 }

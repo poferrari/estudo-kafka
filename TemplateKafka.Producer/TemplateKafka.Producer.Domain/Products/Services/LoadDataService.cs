@@ -13,12 +13,15 @@ namespace TemplateKafka.Producer.Domain.Products.Services
         private const string Locale = "pt_BR";
         private readonly ICategoryRepository _categoryRepository;
         private readonly IVendorRepository _vendorRepository;
+        private readonly IProductStatusRepository _productStatusRepository;
 
         public LoadDataService(ICategoryRepository categoryRepository,
-                               IVendorRepository vendorRepository)
+                               IVendorRepository vendorRepository,
+                               IProductStatusRepository productStatusRepository)
         {
             _categoryRepository = categoryRepository;
             _vendorRepository = vendorRepository;
+            _productStatusRepository = productStatusRepository;
         }
 
         public async Task<IEnumerable<Category>> GetCategoriesOrGenerate()
@@ -53,6 +56,18 @@ namespace TemplateKafka.Producer.Domain.Products.Services
             }
 
             return vendors;
+        }
+
+        public async Task<IEnumerable<ProductStatus>> GetStatus()
+        {
+            var status = await _productStatusRepository.GetAllStatus();
+
+            if (status is null || !status.Any())
+            {
+                throw new SqlNullValueException();
+            }
+
+            return status;
         }
 
         private IEnumerable<Category> GenerateCategories()

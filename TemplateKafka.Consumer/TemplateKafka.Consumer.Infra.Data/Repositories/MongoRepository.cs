@@ -53,12 +53,11 @@ namespace TemplateKafka.Consumer.Infra.Data.Repositories
             return Task.Run(() => _collection.Find(filterExpression).FirstOrDefaultAsync());
         }
 
-        public virtual Task<TDocument> FindByIdAsync(string id)
+        public virtual Task<TDocument> FindByIdAsync(Guid id)
         {
             return Task.Run(() =>
             {
-                var objectId = Guid.Parse(id);
-                var filter = Builders<TDocument>.Filter.Eq(doc => doc.Id, objectId);
+                var filter = Builders<TDocument>.Filter.Eq(doc => doc.Id, id);
                 return _collection.Find(filter).SingleOrDefaultAsync();
             });
         }
@@ -84,12 +83,11 @@ namespace TemplateKafka.Consumer.Infra.Data.Repositories
             return Task.Run(() => _collection.FindOneAndDeleteAsync(filterExpression));
         }
 
-        public Task DeleteByIdAsync(string id)
+        public Task DeleteByIdAsync(Guid id)
         {
             return Task.Run(() =>
             {
-                var objectId = Guid.Parse(id);
-                var filter = Builders<TDocument>.Filter.Eq(doc => doc.Id, objectId);
+                var filter = Builders<TDocument>.Filter.Eq(doc => doc.Id, id);
                 _collection.FindOneAndDeleteAsync(filter);
             });
         }
