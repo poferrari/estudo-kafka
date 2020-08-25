@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using TemplateKafka.Consumer.Domain.Products.Dtos;
@@ -38,15 +39,22 @@ namespace TemplateKafka.Consumer.Domain.Products.Services
 
         private async Task InsertOrUpdateProduct(ProductDto product)
         {
-            var productDb = await _productRepository.GetProduct(product.Id);
+            try
+            {
+                var productDb = await _productRepository.GetProduct(product.Id);
 
-            if (productDb is null)
-            {
-                await _productRepository.InsertProduct(product);
+                if (productDb is null)
+                {
+                    await _productRepository.InsertProduct(product);
+                }
+                else
+                {
+                    await _productRepository.UpdateProduct(product);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await _productRepository.UpdateProduct(product);
+                _logger.LogError($"Error: {ex.Message}");
             }
         }
     }

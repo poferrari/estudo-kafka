@@ -32,7 +32,7 @@ namespace TemplateKafka.Producer.Worker
 
                     await productService.InsertProducts();
 
-                    await productService.UpdateProducts();
+                    //await productService.UpdateProducts();
 
                     _logger.LogInformation("Producer Worker running at: {time}", DateTimeOffset.Now);
                     await Task.Delay(1000, stoppingToken);
@@ -40,7 +40,6 @@ namespace TemplateKafka.Producer.Worker
                 catch (Exception ex)
                 {
                     _logger.LogError($"Error: {ex.Message}");
-
                 }
             }
         }
