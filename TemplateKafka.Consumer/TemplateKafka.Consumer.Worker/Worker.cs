@@ -12,6 +12,7 @@ namespace TemplateKafka.Consumer.Worker
     {
         private readonly ILogger<Worker> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private static bool _initialized = false;
 
         public Worker(ILogger<Worker> logger,
                       IServiceScopeFactory serviceScopeFactory)
@@ -22,15 +23,23 @@ namespace TemplateKafka.Consumer.Worker
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-
-            var productService = scope.ServiceProvider.GetRequiredService<IConsumerProductService>();
-
-            var cancellationTokenSource = new CancellationTokenSource();
-            productService.Subscribe(cancellationTokenSource);
-
             while (!stoppingToken.IsCancellationRequested)
             {
+                if (_initialized)
+                {
+                    return;
+                }
+
+                _initialized = true;
+
+                using var scope = _serviceScopeFactory.CreateScope();
+                var productService = scope.ServiceProvider.GetRequiredService<IConsumerProductService>();
+
+                var cancellationTokenSource = new CancellationTokenSource();
+                productService.Subscribe(cancellationTokenSource);
+
+                _initialized = false;
+
                 _logger.LogInformation("Consumer Worker running at: {time}", DateTimeOffset.Now);
                 await Task.Delay(1000, stoppingToken);
             }

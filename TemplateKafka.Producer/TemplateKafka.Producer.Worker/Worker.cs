@@ -12,6 +12,7 @@ namespace TemplateKafka.Producer.Worker
     {
         private readonly ILogger<Worker> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private static bool _initialized = false;
 
         public Worker(ILogger<Worker> logger,
                       IServiceScopeFactory serviceScopeFactory)
@@ -26,13 +27,21 @@ namespace TemplateKafka.Producer.Worker
             {
                 try
                 {
-                    using var scope = _serviceScopeFactory.CreateScope();
+                    if (_initialized)
+                    {
+                        return;
+                    }
 
+                    _initialized = true;
+
+                    using var scope = _serviceScopeFactory.CreateScope();
                     var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
 
                     await productService.InsertProducts();
 
                     //await productService.UpdateProducts();
+
+                    _initialized = false;
 
                     _logger.LogInformation("Producer Worker running at: {time}", DateTimeOffset.Now);
                     await Task.Delay(1000, stoppingToken);
