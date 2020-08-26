@@ -7,5 +7,6 @@
         public int Timeout { get; set; }
         public string ProductTopic { get; set; }
         public int TimeoutMs => Timeout == 0 ? 5000 : Timeout * 1000;
+        public int MaxPollIntervalMs { get; set; } = 1000;
     }
 }

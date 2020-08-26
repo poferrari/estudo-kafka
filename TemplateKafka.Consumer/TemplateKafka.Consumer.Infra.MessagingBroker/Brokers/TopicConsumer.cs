@@ -28,7 +28,7 @@ namespace TemplateKafka.Consumer.Infra.MessagingBroker.Brokers
         {
             Validate(topicName);
 
-            var consumer = new ConsumerBuilder<Ignore, string>(_consumerConfig).Build();
+            using var consumer = new ConsumerBuilder<Null, string>(_consumerConfig).Build();
             consumer.Subscribe(topicName);
 
             try
@@ -79,10 +79,14 @@ namespace TemplateKafka.Consumer.Infra.MessagingBroker.Brokers
           => new ConsumerConfig
           {
               BootstrapServers = _kafkaConfig.Brokers,
+              ClientId = $"{Environment.MachineName}_{Guid.NewGuid()}",
               GroupId = _kafkaConfig.GroupId,
               SaslMechanism = SaslMechanism.Plain,
               AutoOffsetReset = AutoOffsetReset.Earliest,
+              MaxPollIntervalMs = _kafkaConfig.MaxPollIntervalMs,
               EnableAutoCommit = false,
+              EnableAutoOffsetStore = false,
+              EnableSslCertificateVerification = false,
               Acks = Acks.All,
           };
     }

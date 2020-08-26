@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using TemplateKafka.Producer.Domain.Products.Dto;
 using TemplateKafka.Producer.Domain.Products.Entities;
@@ -116,8 +115,6 @@ namespace TemplateKafka.Producer.Domain.Products.Services
             });
 
             _logger.LogInformation($"Publish product '{product.Name}' in topic.");
-
-            Thread.Sleep(5000);
         }
 
         private Product GenerateProduct(EProductStatus status, IEnumerable<Category> categories, IEnumerable<Vendor> vendors)

@@ -33,16 +33,21 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
 
             var body = _messageBuilder.SerializeAndEncodeMessage(message);
 
+            var cancellationToken = new CancellationTokenSource(_kafkaConfig.TimeoutMs).Token;
+            using var producer = new ProducerBuilder<string, string>(_producerConfig).Build();
+
             try
             {
-                using var producer = new ProducerBuilder<string, string>(_producerConfig).Build();
-
-                await PublishToTopic(producer, body, topicName);
+                await PublishToTopic(producer, cancellationToken, body, topicName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error sending message: {ex.Message}");
                 throw;
+            }
+            finally
+            {
+                producer.Flush(cancellationToken);
             }
         }
 
@@ -54,13 +59,11 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
             }
         }
 
-        private async Task PublishToTopic(IProducer<string, string> producer, Message<string, string> body, string topic)
+        private async Task PublishToTopic(IProducer<string, string> producer, CancellationToken cancellationToken, Message<string, string> body, string topic)
         {
             try
             {
-                var cancellationToken = new CancellationTokenSource(_kafkaConfig.TimeoutMs);
-
-                var deliveryResult = await producer.ProduceAsync(topic, body, cancellationToken.Token);
+                var deliveryResult = await producer.ProduceAsync(topic, body, cancellationToken);
 
                 _logger.LogInformation($"Delivered '{body.Value}|{string.Join(",", body.Headers.Select(t => t.Key))}' to '{deliveryResult.TopicPartitionOffset}'");
             }
@@ -75,6 +78,7 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
            => new ProducerConfig
            {
                BootstrapServers = _kafkaConfig.Brokers,
+               ClientId = Environment.MachineName,
                SaslMechanism = SaslMechanism.Plain,
                EnableIdempotence = true,
                Acks = Acks.All,
