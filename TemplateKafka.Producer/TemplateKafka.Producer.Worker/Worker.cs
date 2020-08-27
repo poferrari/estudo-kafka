@@ -10,8 +10,10 @@ namespace TemplateKafka.Producer.Worker
 {
     public class Worker : BackgroundService
     {
+        private const bool TopicCreated = true;
         private readonly ILogger<Worker> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private static bool _isTopicCreated = false;
 
         public Worker(ILogger<Worker> logger,
                       IServiceScopeFactory serviceScopeFactory)
@@ -22,20 +24,25 @@ namespace TemplateKafka.Producer.Worker
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
+
+            if (!_isTopicCreated)
+            {
+                await productService.CreateTopic("Post.Product");
+                _isTopicCreated = TopicCreated;
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    using var scope = _serviceScopeFactory.CreateScope();
-                    var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
-
                     await productService.InsertProducts();
 
                     //await productService.UpdateProducts();
 
-
                     _logger.LogInformation("Producer Worker running at: {time}", DateTimeOffset.Now);
-                    await Task.Delay(1000, stoppingToken);
+                    await Task.Delay(3000, stoppingToken);
                 }
                 catch (Exception ex)
                 {

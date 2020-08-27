@@ -10,6 +10,7 @@ using TemplateKafka.Producer.Domain.Products.Enums;
 using TemplateKafka.Producer.Domain.Products.Repositories;
 using TemplateKafka.Producer.Infra.MessagingBroker;
 using TemplateKafka.Producer.Infra.MessagingBroker.Brokers;
+using TemplateKafka.Producer.Infra.MessagingBroker.Interfaces;
 
 namespace TemplateKafka.Producer.Domain.Products.Services
 {
@@ -20,6 +21,7 @@ namespace TemplateKafka.Producer.Domain.Products.Services
         private readonly IProductRepository _productRepository;
         private readonly ILoadDataService _loadDataService;
         private readonly IMessageDispatcher _messageDispatcher;
+        private readonly ITopicBroker _topicBroker;
         private IEnumerable<Category> _categories;
         private IEnumerable<Vendor> _vendors;
         private IEnumerable<ProductStatus> _productStatus;
@@ -27,13 +29,14 @@ namespace TemplateKafka.Producer.Domain.Products.Services
         public ProductService(ILogger<ProductService> logger,
                               IProductRepository productRepository,
                               ILoadDataService loadDataService,
-                              IMessageDispatcher messageDispatcher)
+                              IMessageDispatcher messageDispatcher,
+                              ITopicBroker topicBroker)
         {
             _logger = logger;
             _productRepository = productRepository;
             _loadDataService = loadDataService;
             _messageDispatcher = messageDispatcher;
-
+            _topicBroker = topicBroker;
             LoadCategoriesAndVendorsAndStatus().Wait();
         }
 
@@ -45,6 +48,9 @@ namespace TemplateKafka.Producer.Domain.Products.Services
 
             _productStatus = await _loadDataService.GetStatus();
         }
+
+        public async Task CreateTopic(string topicName)
+            => await _topicBroker.CreateTopic(topicName);
 
         public async Task InsertProducts()
         {

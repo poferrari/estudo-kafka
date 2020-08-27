@@ -1,7 +1,9 @@
 ﻿using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +17,7 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
         private readonly ILogger<TopicBroker> _logger;
         private readonly IMessageBuilder _messageBuilder;
         private readonly KafkaConfig _kafkaConfig;
+        private readonly ClientConfig _clientConfig;
         private readonly ProducerConfig _producerConfig;
 
         public TopicBroker(ILogger<TopicBroker> logger,
@@ -24,6 +27,7 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
             _logger = logger;
             _messageBuilder = messageBuilder;
             _kafkaConfig = kafkaConfig.Value;
+            _clientConfig = CreateClientConfig();
             _producerConfig = CreateProducerConfig();
         }
 
@@ -74,15 +78,48 @@ namespace TemplateKafka.Producer.Infra.MessagingBroker.Brokers
             }
         }
 
+        public async Task CreateTopic(string topicName)
+        {
+            using var adminClient = new AdminClientBuilder(_clientConfig).Build();
+            try
+            {
+                await adminClient.CreateTopicsAsync(new List<TopicSpecification>
+                {
+                    new TopicSpecification
+                    {
+                        Name = topicName,
+                        NumPartitions = 2,
+                        ReplicationFactor = 2
+                    }
+                });
+            }
+            catch (CreateTopicsException e)
+            {
+                if (e.Results[0].Error.Code != ErrorCode.TopicAlreadyExists)
+                {
+                    _logger.LogError(e, $"An error occured creating topic {topicName}: {e.Results[0].Error.Reason}");
+                }
+                else
+                {
+                    _logger.LogError(e, "Topic already exists");
+                }
+            }
+        }
+
+        private ClientConfig CreateClientConfig()
+            => new ClientConfig
+            {
+                BootstrapServers = _kafkaConfig.Brokers,
+                SaslMechanism = SaslMechanism.Plain,
+            };
+
         private ProducerConfig CreateProducerConfig()
-           => new ProducerConfig
+           => new ProducerConfig(_clientConfig)
            {
-               BootstrapServers = _kafkaConfig.Brokers,
-               ClientId = Environment.MachineName,
-               SaslMechanism = SaslMechanism.Plain,
                EnableIdempotence = true,
                Acks = Acks.All,
-               MessageSendMaxRetries = 3,
+               Partitioner = Partitioner.Random,
+               MessageSendMaxRetries = 5,
            };
     }
 }
