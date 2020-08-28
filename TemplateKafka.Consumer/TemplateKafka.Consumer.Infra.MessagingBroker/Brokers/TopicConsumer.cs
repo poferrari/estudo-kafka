@@ -14,7 +14,7 @@ namespace TemplateKafka.Consumer.Infra.MessagingBroker.Brokers
         private readonly ILogger<TopicConsumer> _logger;
         private readonly KafkaConfig _kafkaConfig;
         private readonly ConsumerConfig _consumerConfig;
-        private static JsonApiSerializerSettings _jsonApiSerializerSettings = new JsonApiSerializerSettings();
+        private static readonly JsonApiSerializerSettings _jsonApiSerializerSettings = new JsonApiSerializerSettings();
 
         public TopicConsumer(ILogger<TopicConsumer> logger,
                              KafkaConfig kafkaConfig)
@@ -28,7 +28,7 @@ namespace TemplateKafka.Consumer.Infra.MessagingBroker.Brokers
         {
             Validate(topicName);
 
-            using var consumer = new ConsumerBuilder<Null, string>(_consumerConfig).Build();
+            using var consumer = new ConsumerBuilder<string, string>(_consumerConfig).Build();
             consumer.Subscribe(topicName);
 
             try
@@ -79,14 +79,14 @@ namespace TemplateKafka.Consumer.Infra.MessagingBroker.Brokers
           => new ConsumerConfig
           {
               BootstrapServers = _kafkaConfig.Brokers,
-              ClientId = $"{Environment.MachineName}_{Guid.NewGuid()}",
               GroupId = _kafkaConfig.GroupId,
               SaslMechanism = SaslMechanism.Plain,
               AutoOffsetReset = AutoOffsetReset.Earliest,
-              MaxPollIntervalMs = _kafkaConfig.MaxPollIntervalMs,
+              //MaxPartitionFetchBytes = 1024 * 100,
+              //MessageMaxBytes = 1024 * 100,
+              //FetchMaxBytes = 1024 * 100,
               EnableAutoCommit = false,
-              EnableAutoOffsetStore = false,
-              EnableSslCertificateVerification = false,
+              //EnableAutoOffsetStore = false,
               Acks = Acks.All,
           };
     }

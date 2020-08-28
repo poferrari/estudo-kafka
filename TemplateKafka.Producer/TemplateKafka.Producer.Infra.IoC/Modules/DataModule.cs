@@ -15,8 +15,9 @@ namespace TemplateKafka.Producer.Infra.IoC.Modules
 
         public static void Register(IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<DataContext>(options =>
-                  options.UseSqlServer(GetConnectionString(configuration))
+            services.AddDbContext<DataContext>(optionsBuilder =>
+                  optionsBuilder
+                         .UseSqlServer(GetConnectionString(configuration))
                          .UseLoggerFactory(EFLoggerFactory),
                   ServiceLifetime.Transient
               );
